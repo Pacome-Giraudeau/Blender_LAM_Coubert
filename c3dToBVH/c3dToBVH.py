@@ -4,45 +4,39 @@ import math
 import vector
 from scipy.spatial.transform import Rotation as R
 import shutil
+import matplotlib.pyplot as plt
 
 from scipy.interpolate import interp1d
 
-# with open('exemple1.c3d', 'rb') as handle:
-#     reader = c3d.Reader(handle)
-    
-#     for i, (n, points, analog) in enumerate(reader.read_frames()):
-#         print("\n ----", i, n)
-#         print(i, n, " - POINTS :")
-#         ligne = 0
-#         for label in enumerate(reader.point_labels):
-#             print("     ", label, " : ", points[ligne])
-#             ligne+=1
-        
-#         print(i, n, " - ANALOG :")
-#         ligne = 0
-#         for label in enumerate(reader.analog_labels):
-#             print("     ", label, " : ", analog[ligne])
-#             ligne+=1
 
 
 def get_data():
     data_points = dict()
-    with open('exemple1.c3d', 'rb') as handle:
+    with open('exemple3.c3d', 'rb') as handle:
         reader = c3d.Reader(handle)
+        
         for i, label in enumerate(reader.point_labels):
+            print(label)
             data_points[label.replace(" ","")] = []
                 
         for i, (n, points, analog) in enumerate(reader.read_frames()):
-            ligne = 0
             for j, label in enumerate(reader.point_labels):
-                data_points[label.replace(" ","")].append(points[ligne])
-                ligne+=1
-                
+                data_points[label.replace(" ","")].append(points[j])
+        
             
         for i, label in enumerate(reader.point_labels):
             data_points[label.replace(" ","")] = np.array(data_points[label.replace(" ","")])
             
     return data_points
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
 def init_joint_angles():      
     joints = ["Pelvis", "LPelvis", "LHip", "LKnee", "LAnkle", "RPelvis", "RHip", "RKnee", "RAnkle"]
@@ -57,35 +51,45 @@ def norme(u):
     return x
 
 def normalized_vector(u1, u2):
-    uprime = (u1[0] - u2[0], u1[1]- u2[1], u1[2] - u2[2])
+    uprime = (u2[0] - u1[0], u2[1]- u1[1], u2[2] - u1[2])
     return np.array([uprime[0]/norme(uprime), uprime[1]/norme(uprime), uprime[2]/norme(uprime)])
 
 
-def calculate_base_system_right(u1_1, u1_2, u2_1, u2_2):
-    if u1_1[3] == -1 or u1_2[3] == -1 or u2_1[3] == -1 or u2_2[3] == -1:
+def calculate_base_system_right(u1_1, u1_2, u2_interieur, u2_exterieur):
+    if u1_1[3] == -1 or u1_2[3] == -1 or u2_interieur[3] == -1 or u2_exterieur[3] == -1:
         return np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([0, 0, 0])
     
     u1 = normalized_vector(u1_1, u1_2)
-    u2prime = normalized_vector(u2_1, u2_2)
+    u2prime = normalized_vector(u2_interieur, u2_exterieur)
     u3 = np.cross(u1, u2prime)
     u2 = np.cross(u3, u1)
     return u1, u2, u3
 
-def calculate_base_system_left(u1_1, u1_2, u2_1, u2_2):
-    if u1_1[3] == -1 or u1_2[3] == -1 or u2_1[3] == -1 or u2_2[3] == -1:
+print(calculate_base_system_right([0,0,0,0], [1,0,0,0], [0,-1,0,0], [0,1,0,0]))
+
+def calculate_base_system_left(u1_1, u1_2, u2_interieur, u2_exterieur):
+    if u1_1[3] == -1 or u1_2[3] == -1 or u2_interieur[3] == -1 or u2_exterieur[3] == -1:
         return np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([0, 0, 0])
     
     u1 = normalized_vector(u1_1, u1_2)
-    u2prime = normalized_vector(u2_1, u2_2)
+    u2prime = normalized_vector(u2_interieur, u2_exterieur)
     u3 = np.cross(u2prime, u1)
     u2 = np.cross(u1, u3)
     return u1, u2, u3
 
 
+print(calculate_base_system_left([0,0,0,0], [1,0,0,0], [0,1,0,0], [0,-1,0,0]))
+
+
 data_points = get_data()
 
-def calculate_base_bassin(f):
+def calculate_base_bassin_left(f):
     return calculate_base_system_left(data_points['V.MidASIS'][f], data_points['V.Sacrum'][f], data_points['V.R.ASIS'][f], data_points['V.L.ASIS'][f])
+
+
+def calculate_base_bassin_right(f):
+    return calculate_base_system_right(data_points['V.MidASIS'][f], data_points['V.Sacrum'][f], data_points['V.R.ASIS'][f], data_points['V.L.ASIS'][f])
+
 
 def calculate_base_cuisse_left(f):
     return calculate_base_system_left(data_points['V.L.Knee'][f], data_points['V.L.ASIS'][f], data_points['V.L.MedialFemoralEpicondyle'][f], data_points['V.L.LateralFemoralEpicondyle'][f])
@@ -147,7 +151,7 @@ def angles_euler_from_matrice_passage(P, sequence='zyx'):
     
     return angles_euler
 
-def get_angles_euler(B1, B2, sequence='zyx'):
+def get_angles_euler(B1, B2, sequence='yxz'):
     P = matrice_de_passage(B1, B2)
     angles = angles_euler_from_matrice_passage(P, sequence)
     angles_arrondis = np.array([round(angles[0], 4), round(angles[1], 4), round(angles[2], 4)])
@@ -156,12 +160,18 @@ def get_angles_euler(B1, B2, sequence='zyx'):
 
 
 
-points = [
-            'V.MidASIS', 'V.Sacrum', 'V.R.ASIS', 'V.L.ASIS', 'V.L.Knee','V.L.MedialFemoralEpicondyle', 'V.L.LateralFemoralEpicondyle', 
-            'V.R.Knee', 'V.R.MedialFemoralEpicondyle', 'V.R.LateralFemoralEpicondyle','V.L.Ankle', 'V.L.MedialMalleolus', 
-            'V.L.LateralMalleolus', 'V.R.Ankle', 'V.R.MedialMalleolus', 'V.R.LateralMalleolus', 'V.L.Calcaneus', 'V.R.Calcaneus',
-            'V.L.MidMT', 'V.R.MidMT', 'V.L.FMT', 'V.L.FMT', 'L.5MT', 'L.5MT'
-        ]
+
+
+# points = [
+#             'V.MidASIS', 'V.Sacrum', 'V.R.ASIS', 'V.L.ASIS', 'V.L.Knee','V.L.MedialFemoralEpicondyle', 'V.L.LateralFemoralEpicondyle', 
+#             'V.R.Knee', 'V.R.MedialFemoralEpicondyle', 'V.R.LateralFemoralEpicondyle','V.L.Ankle', 'V.L.MedialMalleolus', 
+#             'V.L.LateralMalleolus', 'V.R.Ankle', 'V.R.MedialMalleolus', 'V.R.LateralMalleolus', 'V.L.Calcaneus', 'V.R.Calcaneus',
+#             'V.L.MidMT', 'V.R.MidMT', 'V.L.FMT', 'V.L.FMT', 'L.5MT', 'L.5MT'
+#         ]
+
+
+points = data_points.keys()
+
 
 def find_first_frame():
     f = 0
@@ -186,7 +196,7 @@ def find_last_frame():
     return f
     
 
-with open('exemple1.c3d', 'rb') as handle:
+with open('exemple3.c3d', 'rb') as handle:
     reader = c3d.Reader(handle)
     frames = reader.frame_count
     frame_time = 0.01
@@ -207,6 +217,10 @@ def existing_or_not__indices(point, first_frame, last_frame):
     return np.array(missing_indices), np.array(existing_indices), np.array(existing_points)
 
     
+
+
+
+    
 for point in points:
 
     # Extraire les points existants
@@ -221,43 +235,153 @@ for point in points:
     
 
 
-shutil.copyfile("bvh_base5.bvh", "exemple1.bvh")
-f = open("exemple1.bvh", 'a')
+# shutil.copyfile("bvh_base5.bvh", "exemple3.bvh")
+# f = open("exemple3.bvh", 'a')
+
+# f.write("\n\n\nFrames: " + str(frames))
+# f.write("\nFrame Time: " + str(frame_time) + "\n") 
+
+
+# for i in range(first_frame, last_frame):
+#     base_global = np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 0, 1])
+#     base_bassin_left = calculate_base_bassin_left(i)
+#     base_bassin_right = calculate_base_bassin_right(i)
+#     base_cuisse_left = calculate_base_cuisse_left(i)
+#     base_cuisse_right = calculate_base_cuisse_right(i)
+#     base_jambe_left = calculate_base_jambe_left(i)
+#     base_jambe_right = calculate_base_jambe_right(i)
+#     base_pied_left = calculate_base_pied_left(i)
+#     base_pied_right = calculate_base_pied_right(i)
+    
+#     angles_bassin = get_angles_euler(base_global, base_bassin_right)
+#     pelvis_str ="{} {} {} ".format(angles_bassin[0], angles_bassin[1], angles_bassin[2]) 
+    
+#     angles_cuisse_left = get_angles_euler(base_bassin_left, base_cuisse_left)
+#     Lhip_str = "{} {} {} ".format(angles_cuisse_left[0], angles_cuisse_left[1], angles_cuisse_left[2]) 
+#     angles_jambe_left = get_angles_euler(base_cuisse_left, base_jambe_left)
+#     Lknee_str = "{} {} {} ".format(angles_jambe_left[0], angles_jambe_left[1], angles_jambe_left[2])
+#     angles_pied_left = get_angles_euler(base_jambe_left, base_pied_left)
+#     Lankle_str = "{} {} {} ".format(angles_pied_left[0], angles_pied_left[1], angles_pied_left[2])
+    
+#     angles_cuisse_right = get_angles_euler(base_bassin_right, base_cuisse_right)
+#     Rhip_str = "{} {} {} ".format(angles_cuisse_right[0], angles_cuisse_right[1], angles_cuisse_right[2])
+#     angles_jambe_right = get_angles_euler(base_cuisse_right, base_jambe_right)
+#     Rknee_str = "{} {} {} ".format(angles_jambe_right[0], angles_jambe_right[1], angles_jambe_right[2])
+#     angles_pied_right = get_angles_euler(base_jambe_right, base_pied_right)
+#     Rankle_str = "{} {} {} ".format(angles_pied_right[0], angles_pied_right[1], angles_pied_right[2])
+    
+#     positions_bassin = "0 0 0 "
+#     Lpelvis = "0 0 0 "
+#     Rplevis = "0 0 0 "
+#     leftover = 14*"0 0 0 "
+    
+#     f.write(positions_bassin + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + leftover + "\n")
+    
+    
+    
+    
+    
+    
+shutil.copyfile("bvh_base5.bvh", "exemple3.bvh")
+f = open("exemple3.bvh", 'a')
 
 f.write("\n\n\nFrames: " + str(frames))
 f.write("\nFrame Time: " + str(frame_time) + "\n") 
 
 
-for i in range(first_frame, last_frame):
-    base_global = np.array([1, 0, 0]), np.array([0, 1, 0]), np.array([0, 0, 1])
-    base_bassin = calculate_base_bassin(i)
-    base_cuisse_left = calculate_base_cuisse_left(i)
-    base_cuisse_right = calculate_base_cuisse_right(i)
-    base_jambe_left = calculate_base_jambe_left(i)
-    base_jambe_right = calculate_base_jambe_right(i)
-    base_pied_left = calculate_base_pied_left(i)
-    base_pied_right = calculate_base_pied_right(i)
+#########################  c3d avec angles -> bvh
+# for i in range(first_frame, last_frame):
     
-    angles_bassin = get_angles_euler(base_global, base_bassin)
-    pelvis_str ="{} {} {} ".format(angles_bassin[0], angles_bassin[1], angles_bassin[2]) 
+#     ordre = [0,1,2]
     
+#     angles_bassin = data_points["L.Pelvis"][i]
+#     pelvis_str ="{} {} {} ".format(angles_bassin[ordre[0]], angles_bassin[ordre[1]], -angles_bassin[ordre[2]]) 
+    
+#     angles_cuisse_left = data_points["L.Hip"][i]
+#     Lhip_str = "{} {} {} ".format(-angles_cuisse_left[ordre[0]], -angles_cuisse_left[ordre[1]], -angles_cuisse_left[ordre[2]]) 
+#     angles_jambe_left = data_points["L.Knee"][i]
+#     Lknee_str = "{} {} {} ".format(-angles_jambe_left[ordre[0]], angles_jambe_left[ordre[1]], -angles_jambe_left[ordre[2]])
+#     angles_pied_left = data_points["L.Ankle"][i]
+#     Lankle_str = "{} {} {} ".format(-angles_pied_left[ordre[0]], -angles_pied_left[ordre[1]], -angles_pied_left[ordre[2]])
+    
+#     angles_cuisse_right = data_points["R.Hip"][i]
+#     Rhip_str = "{} {} {} ".format(angles_cuisse_right[ordre[0]], -angles_cuisse_right[ordre[1]], angles_cuisse_right[ordre[2]])
+#     angles_jambe_right = data_points["R.Knee"][i]
+#     Rknee_str = "{} {} {} ".format(angles_jambe_right[ordre[0]], angles_jambe_right[ordre[1]], angles_jambe_right[ordre[2]])
+#     angles_pied_right = data_points["R.Ankle"][i]
+#     Rankle_str = "{} {} {} ".format(angles_pied_right[ordre[0]], -angles_pied_right[ordre[1]], angles_pied_right[ordre[2]])
+    
+#     positions_bassin = "0 0 0 "
+#     Lpelvis = "0 0 0 "
+#     Rplevis = "0 0 0 "
+#     leftover = 14*"0 0 0 "
+#     f.write(positions_bassin + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + leftover + "\n")
+    
+    
+
+
+for f in range(first_frame, last_frame):
+    base_bassin = calculate_base_bassin_left(f)
+    base_cuisse_left = calculate_base_cuisse_left(f)
     angles_cuisse_left = get_angles_euler(base_bassin, base_cuisse_left)
     Lhip_str = "{} {} {} ".format(angles_cuisse_left[0], angles_cuisse_left[1], angles_cuisse_left[2]) 
-    angles_jambe_left = get_angles_euler(base_cuisse_left, base_jambe_left)
-    Lknee_str = "{} {} {} ".format(angles_jambe_left[0], angles_jambe_left[1], angles_jambe_left[2])
-    angles_pied_left = get_angles_euler(base_jambe_left, base_pied_left)
-    Lankle_str = "{} {} {} ".format(angles_pied_left[0], angles_pied_left[1], angles_pied_left[2])
+    print(angles_cuisse_left, "  ---  ", data_points["L.Knee"][f])
+
+
+
+
+
+# with open('exemple3.c3d', 'rb') as handle:
+#     reader = c3d.Reader(handle)
     
-    angles_cuisse_right = get_angles_euler(base_bassin, base_cuisse_right)
-    Rhip_str = "{} {} {} ".format(angles_cuisse_right[0], angles_cuisse_right[1], angles_cuisse_right[2])
-    angles_jambe_right = get_angles_euler(base_cuisse_right, base_jambe_right)
-    Rknee_str = "{} {} {} ".format(angles_jambe_right[0], angles_jambe_right[1], angles_jambe_right[2])
-    angles_pied_right = get_angles_euler(base_jambe_right, base_pied_right)
-    Rankle_str = "{} {} {} ".format(angles_pied_right[0], angles_pied_right[1], angles_pied_right[2])
+#     for i, (n, points, analog) in enumerate(reader.read_frames()):
+#         print("\n ----", i, n)
+#         print(i, n, " - POINTS :")
+#         ligne = 0
+#         for label in enumerate(reader.point_labels):
+#             print("     ", label, " : ", points[ligne][0:4])
+#             ligne+=1
+        
+#         print(i, n, " - ANALOG :")
+#         ligne = 0
+#         for label in enumerate(reader.analog_labels):
+#             print("     ", label, " : ", analog[ligne][0:4])
+#             ligne+=1
+
+
+        
+
+
+def affiche(label, ff=0, lf=450):
+    print(label, " : \n")
+    for f in range(ff, lf):
+        print ("  ", f, " -> ", data_points[label][f][0:5])
+        
+    points = []
+    x = []
+    y = []
+    z = []
+    print(ff, lf)
+    for f in range(ff, lf):
+        points.append(data_points[label][f][0:3])
+        z.append(data_points[label][f][2])
+        y.append(data_points[label][f][1])
+        x.append(data_points[label][f][0])
     
-    positions_bassin = "0 0 0 "
-    Lpelvis = "0 0 0 "
-    Rplevis = "0 0 0 "
-    leftover = 14*"0 0 0 "
+    ax = plt.figure().add_subplot()
+    ax.plot(range(ff, lf), x)
+    ay = plt.figure().add_subplot()
+    ay.plot(range(ff, lf), y)
+    az = plt.figure().add_subplot()
+    az.plot(range(ff, lf), z)
+    axyz = plt.figure().add_subplot(projection='3d')
+    axyz.plot(x, y, z)
+    plt.show()
     
-    f.write(positions_bassin + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + leftover + "\n")
+# affiche("L.Knee")
+
+
+# with open('exemple3.c3d', 'rb') as handle:
+#         reader = c3d.Reader(handle)
+        
+#         reader.read_frames
