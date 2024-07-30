@@ -156,7 +156,7 @@ def angles_euler_from_matrice_passage(P, sequence='zyx'):
     
     # Extraire les angles d'Euler selon la séquence spécifiée
     angles_euler = rotation.as_euler(sequence, degrees=True)
-    
+    f
     return angles_euler
 
 def get_angles_euler(B1, B2, sequence='yxz'):
