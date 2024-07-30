@@ -37,20 +37,20 @@ def get_data(file):
     
     
     
-def init_joint_angles():      
-    joints = ["Pelvis", "LPelvis", "LHip", "LKnee", "LAnkle", "RPelvis", "RHip", "RKnee", "RAnkle"]
-    #, "LowerBack", "Spine", "Spine1", "Neck", "Neck1", "Head", "LClavicle", "LShoulder", "LElbow", "LWrist"
-    joints_angles = dict()
-    for j in joints:
-        joints_angles[joints[j]] = []
-        return joints_angles
+# def init_joint_angles():      
+#     joints = ["LPelvis", "LHip", "LKnee", "LAnkle", "RPelvis", "RHip", "RKnee", "RAnkle"]
+#     #, "LowerBack", "Spine", "Spine1", "Neck", "Neck1", "Head", "LClavicle", "LShoulder", "LElbow", "LWrist"
+#     joints_angles = dict()
+#     for j in joints:
+#         joints_angles[joints[j]] = []
+#         return joints_angles
     
 def norme(u):
     x = math.sqrt(u[0]**2 + u[1]**2 + u[2]**2)
     return x
 
-def normalized_vector(u1, u2):
-    uprime = (u2[0] - u1[0], u2[1]- u1[1], u2[2] - u1[2])
+def normalized_vector(p1, p2):
+    uprime = (p2[0] - p1[0], p2[1]- p1[1], p2[2] - p1[2])
     return np.array([uprime[0]/norme(uprime), uprime[1]/norme(uprime), uprime[2]/norme(uprime)])
 
 
@@ -82,18 +82,18 @@ def calculate_base_system_left(u1_1, u1_2, u2_interieur, u2_exterieur):
 data_points = get_data("Corridor_050_avec_angles.c3d")
 
 def calculate_base_bassin_left(f):
-    return calculate_base_system_left(data_points['V.MidASIS'][f], data_points['V.Sacrum'][f], data_points['V.R.ASIS'][f], data_points['V.L.ASIS'][f])
+    return calculate_base_system_left(data_points['V.Sacrum'][f], data_points['V.MidASIS'][f], data_points['V.R.ASIS'][f], data_points['V.L.ASIS'][f])
 
 
 def calculate_base_bassin_right(f):
-    return calculate_base_system_right(data_points['V.MidASIS'][f], data_points['V.Sacrum'][f], data_points['V.R.ASIS'][f], data_points['V.L.ASIS'][f])
+    return calculate_base_system_right(data_points['V.Sacrum'][f], data_points['V.MidASIS'][f], data_points['V.R.ASIS'][f], data_points['V.L.ASIS'][f])
 
 
 def calculate_base_cuisse_left(f):
-    return calculate_base_system_left(data_points['V.L.Knee'][f], data_points['V.L.ASIS'][f], data_points['V.L.MedialFemoralEpicondyle'][f], data_points['V.L.LateralFemoralEpicondyle'][f])
+    return calculate_base_system_left(data_points['V.L.Knee'][f], data_points['V.L.Hip'][f], data_points['V.L.MedialFemoralEpicondyle'][f], data_points['V.L.LateralFemoralEpicondyle'][f])
 
 def calculate_base_cuisse_right(f):
-    return calculate_base_system_right(data_points['V.R.Knee'][f], data_points['V.R.ASIS'][f], data_points['V.R.MedialFemoralEpicondyle'][f], data_points['V.R.LateralFemoralEpicondyle'][f])
+    return calculate_base_system_right(data_points['V.R.Knee'][f], data_points['V.R.Hip'][f], data_points['V.R.MedialFemoralEpicondyle'][f], data_points['V.R.LateralFemoralEpicondyle'][f])
 
 
 
@@ -123,46 +123,39 @@ def matrice_de_passage(B1, B2):
     :param B2: Un tuple de trois vecteurs numpy représentant les bases du deuxième repère.
     :return: La matrice de passage de B1 à B2.
     """
-    
-    print("\n\n Bases : \n")
-    print(B1)
-    print(B2)
-    
     # Créer les matrices B1 et B2
     M1 = np.column_stack(B1)
     M2 = np.column_stack(B2)
-    print("\n\n Matrices : \n")
-    print(M1)
-    print(M2)
     
     # Calculer la matrice de passage P
-    P = np.dot(M2, np.linalg.inv(M1))
-    print("\n\n Matrice de passage : \n")
-    print(P)
+    P = np.dot(M2, M1.transpose())
     
     return P
 
+print(matrice_de_passage(([1, 0, 0], [0, 1, 1], [1, 1, 1]), ([1, 1, 0], [1, 0, 0], [1, 0, 1])))
 
-def angles_euler_from_matrice_passage(P, sequence='zyx'):
+
+def angles_euler_from_matrice_passage(P, sequence='yxz'):
     """
     Calcule les angles d'Euler à partir d'une matrice de passage.
     
     :param P: La matrice de passage (ou de rotation).
-    :param sequence: La séquence des axes d'Euler (par défaut 'zyx').
-    :return: Les angles d'Euler (en radians).
+    :param sequence: La séquence des axes d'Euler (par défaut 'yxz').
+    :return: Les angles d'Euler (en degrés).
     """
     # Créer un objet Rotation à partir de la matrice de passage
     rotation = R.from_matrix(P)
     
     # Extraire les angles d'Euler selon la séquence spécifiée
     angles_euler = rotation.as_euler(sequence, degrees=True)
-    f
+    
     return angles_euler
 
 def get_angles_euler(B1, B2, sequence='yxz'):
     P = matrice_de_passage(B1, B2)
     angles = angles_euler_from_matrice_passage(P, sequence)
     angles_arrondis = np.array([round(angles[0], 4), round(angles[1], 4), round(angles[2], 4)])
+    angles_arrondis[0], angles_arrondis[1] = angles_arrondis[1], angles_arrondis[0]
     return angles_arrondis
 
 
@@ -329,14 +322,15 @@ for i in range(first_frame, last_frame):
 #     f.write(positions_bassin + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + leftover + "\n")
     
     
+    
 
 
-# for f in range(first_frame, last_frame):
-#     base_bassin = calculate_base_bassin_left(f)
-#     base_cuisse_left = calculate_base_cuisse_left(f)
-#     angles_cuisse_left = get_angles_euler(base_bassin, base_cuisse_left)
-#     Lhip_str = "{} {} {} ".format(angles_cuisse_left[0], angles_cuisse_left[1], angles_cuisse_left[2]) 
-#     print(angles_cuisse_left, "  ---  ", data_points["L.Knee"][f])
+# # for f in range(first_frame, last_frame):
+# #     base_jambe_left = calculate_base_jambe_left(f)
+# #     base_cuisse_left = calculate_base_cuisse_left(f)
+# #     angles_knee_left = get_angles_euler(base_jambe_left, base_cuisse_left)
+# #     Lknee_str = "{} {} {} ".format(angles_knee_left[0], angles_knee_left[1], angles_knee_left[2]) 
+# #     print(angles_knee_left, "  ---  ", data_points["L.Knee"][f])
 
 
 
