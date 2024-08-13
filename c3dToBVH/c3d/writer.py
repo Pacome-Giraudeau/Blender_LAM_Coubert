@@ -221,11 +221,12 @@ class Writer(Manager):
             Insert the frame or sequence at the index (the first sequence frame will be inserted at the given `index`).
             Note that the index should be relative to 0 rather then the frame number provided by read_frames()!
         '''
-        sh = np.shape(frames)
-        # Single frame
-        if len(sh) < 2:
+        # print(frames)
+        # sh = np.shape(frames)
+        
+        # # Single frame
+        if len(frames ) == 2:
             frames = [frames]
-            sh = np.shape(frames)
 
         # Check data shapes match
         if len(self._frames) > 0:
@@ -243,11 +244,11 @@ class Writer(Manager):
                             str(ash), str(np.shape(f[1]))
                         ))
 
-        # Sequence of invalid shape
-        if sh[1] != 2:
-            raise ValueError(
-                'Expected frame input to be sequence of point and analog pairs on form (None, 2). ' +
-                'Input was of shape {}.'.format(str(sh)))
+        # # Sequence of invalid shape
+        # if sh[1] != 2:
+        #     raise ValueError(
+        #         'Expected frame input to be sequence of point and analog pairs on form (None, 2). ' +
+        #         'Input was of shape {}.'.format(str(sh)))
 
         if index is not None:
             self._frames[index:index] = frames
