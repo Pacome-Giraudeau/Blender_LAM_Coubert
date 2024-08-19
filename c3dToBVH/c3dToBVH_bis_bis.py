@@ -512,7 +512,6 @@ def c3d_sans_angles(file):
                 c["data"]["points"][j][k][i] = nouv_points[point][i-first_frame][j]
             k+=1
             
-    print("ECRITURE !!!")
     c.write("nouv_" + file)
 
 
@@ -572,56 +571,52 @@ def c3d_avec_angles_complet(file):
     for i in range(first_frame, last_frame):
         
         angles_pelvis = data_points["L.Pelvis"][i]
-        pelvis_str ="{} {} {} ".format(angles_pelvis[0], angles_pelvis[1], -angles_pelvis[2]) 
         
         angles_Hip_left = data_points["L.Hip"][i]
-        Lhip_str = "{} {} {} ".format(-angles_Hip_left[0], -angles_Hip_left[1], -angles_Hip_left[2]) 
         angles_Hip_left = data_points["L.Knee"][i]
-        Lknee_str = "{} {} {} ".format(-angles_Hip_left[0], angles_Hip_left[1], -angles_Hip_left[2])
         angles_Ankle_left = data_points["L.Ankle"][i]
-        Lankle_str = "{} {} {} ".format(-angles_Ankle_left[0], -angles_Ankle_left[1], -angles_Ankle_left[2])
         
         angles_Hip_right = data_points["R.Hip"][i]
-        Rhip_str = "{} {} {} ".format(angles_Hip_right[0], -angles_Hip_right[1], angles_Hip_right[2])
         angles_Knee_right = data_points["R.Knee"][i]
-        Rknee_str = "{} {} {} ".format(angles_Knee_right[0], angles_Knee_right[1], angles_Knee_right[2])
         angles_Ankle_right = data_points["R.Ankle"][i]
+        
+        
+        pelvis_str ="{} {} {} ".format(angles_pelvis[0], angles_pelvis[1], -angles_pelvis[2]) 
+        Lhip_str = "{} {} {} ".format(-angles_Hip_left[0], -angles_Hip_left[1], -angles_Hip_left[2]) 
+        Lknee_str = "{} {} {} ".format(-angles_Hip_left[0], angles_Hip_left[1], -angles_Hip_left[2])
+        Lankle_str = "{} {} {} ".format(-angles_Ankle_left[0], -angles_Ankle_left[1], -angles_Ankle_left[2])
+        Rhip_str = "{} {} {} ".format(angles_Hip_right[0], -angles_Hip_right[1], angles_Hip_right[2])
+        Rknee_str = "{} {} {} ".format(angles_Knee_right[0], angles_Knee_right[1], angles_Knee_right[2])
         Rankle_str = "{} {} {} ".format(angles_Ankle_right[0], -angles_Ankle_right[1], angles_Ankle_right[2])
         
-        # LowerBack = data_points[""][i] -> 0
-        LowerBack = "0 -10 0 "
         Spine = data_points["L.Spine"][i] 
-        Spine_str = "{} {} {} ".format(-Spine[0], Spine[1], -Spine[2])
-        # Spine1 = data_points[][i] -> 0
-        Spine1 = "0 0 0 "
         Neck = data_points["Neck"][i]
-        Neck_str = "{} {} {} ".format(Neck[0], -Neck[1], Neck[2])
-        # Neck1 = data_points[][i] -> 0
-        Neck1 = "0 0 0 "
-        # Head = data_points[][i]-> 0
-        Head = "0 0 0 "
-        # LClavicle = data_points[][i] -> 0 
-        LClavicle = "0 0 0 "
-        
         LElbow = data_points["L.Elbow"][i]
-        LElbow_str = "{} {} {} ".format(LElbow[0], LElbow[2], -LElbow[1])
-        
         RElbow = data_points["R.Elbow"][i]
-        RElbow_str = "{} {} {} ".format(-RElbow[0], RElbow[2], RElbow[1])
-        
         LWrist = data_points["L.Wrist"][i] 
-        LWrist_str = "{} {} {} ".format(-LWrist[1], LWrist[2], -LWrist[0])
-        # RClavicle = data_points[][i] -> 0
-        RClavicle = "0 0 0 "
         RWrist = data_points["R.Wrist"][i] 
-        RWrist_str = "{} {} {} ".format(RWrist[1], RWrist[2], RWrist[0])
         RShoulder =  data_points["R.Shoulder"][i]
-        RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
         LShoulder =  data_points["L.Shoulder"][i]
+        
+        
+        LowerBack = "0 -10 0 "
+        Spine_str = "{} {} {} ".format(-Spine[0], Spine[1], -Spine[2])
+        Spine1 = "0 0 0 "
+        Neck_str = "{} {} {} ".format(Neck[0], -Neck[1], Neck[2])
+        Neck1 = "0 0 0 "
+        Head = "0 0 0 "
+        LClavicle = "0 0 0 "
+        RClavicle = "0 0 0 "
+        LElbow_str = "{} {} {} ".format(LElbow[0], LElbow[2], -LElbow[1])
+        RElbow_str = "{} {} {} ".format(-RElbow[0], RElbow[2], RElbow[1])
+        LWrist_str = "{} {} {} ".format(-LWrist[1], LWrist[2], -LWrist[0])
+        RWrist_str = "{} {} {} ".format(RWrist[1], RWrist[2], RWrist[0])
+        RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
         LShoulder_str = "{} {} {} ".format(LShoulder[0]-90, LShoulder[1], LShoulder[2])
-        positions_pelvis = "1000 1000 1000 "
+        
         # positions_pelvis = "{} {} {} ".format(data_points["V.PelvisOriginBD"][i][1]/1000, data_points["V.PelvisOriginBD"][i][2]/1000, -data_points["V.PelvisOriginBD"][i][0]/600)
         
+        positions_pelvis = "1000 1000 1000 "
         Lpelvis = "0 0 0 "
         Rplevis = "0 0 0 "
         leftover = 14*"0 0 0 "
@@ -634,6 +629,199 @@ def c3d_avec_angles_complet(file):
                 RShoulder_str + RElbow_str + RWrist_str + "\n")
         
     #LowerBack Spine Spine1 Neck Neck1 Head LClavicle LShoulder LElbow LWrist RClavicle RElbow RWrist
+############# full c3d avec angles -> bvh  
+
+def c3d_to_bvh_final(file):
+    data_points, frames, frame_time, first_frame, last_frame, base_global = init(file)
+    
+    file_bvh = file[:-4] + "_complet.bvh"
+
+    shutil.copyfile("bvh_base5.bvh", file_bvh)
+    f = open(file_bvh, 'a')
+
+    f.write("\n\n\nFrames: " + str(frames))
+    f.write("\nFrame Time: " + str(frame_time) + "\n") 
+
+    c = ezc3d(file)
+    del c['data']['meta_points']
+    
+    number_of_points = len(c["parameters"]["POINT"]["LABELS"]["value"])
+    list_of_points = c["parameters"]["POINT"]["LABELS"]["value"]
+    
+    nouv_points = dict()
+    if 'L.Pelvis' not in list_of_points:
+        nouv_points['L.Pelvis'] = []
+    if 'L.Hip' not in list_of_points:
+        nouv_points['L.Hip'] = []
+    if 'L.Knee' not in list_of_points:
+        nouv_points['L.Knee'] = []
+    if 'L.Ankle' not in list_of_points:
+        nouv_points['L.Ankle'] = []
+    if 'R.Hip' not in list_of_points:
+        nouv_points['R.Hip'] = []
+    if 'R.Knee' not in list_of_points:
+        nouv_points['R.Knee'] = []
+    if 'R.Ankle' not in list_of_points:
+        nouv_points['R.Ankle'] = []
+    
+    
+    c["parameters"]["POINT"]["LABELS"]["value"] = list_of_points + list(nouv_points.keys())
+    l = [[], [], [], []]
+    for j in range(4):
+        for k in range(number_of_points):
+            l[j].append(c["data"]["points"][j][k])
+        for k in range(len(nouv_points.keys())):
+            l[j].append(np.zeros(frames))
+            
+    c["data"]["points"] = np.array(l)
+    
+   
+    for i in range(first_frame, last_frame):
+        # calcul des bases des différents solides de la frame
+        base_pelvis_left = calculate_base_pelvis_left(i, data_points)
+        base_pelvis_right = calculate_base_pelvis_right(i, data_points)
+        base_thigh_left = calculate_base_thigh_left(i, data_points)
+        base_thigh_right = calculate_base_thigh_right(i, data_points)
+        base_leg_left = calculate_base_leg_left(i, data_points)
+        base_leg_right = calculate_base_leg_right(i, data_points)
+        base_foot_left = calculate_base_foot_left(i, data_points)
+        base_foot_right = calculate_base_foot_right(i, data_points)
+        
+        # Calcul des angles
+        
+        
+            
+            
+        
+        if 'L.Pelvis' not in list_of_points: 
+            angles_pelvis = get_angles_euler(base_global, base_pelvis_left, sequence="yxz", polarity=(-1, -1, 1))
+            nouv_points['L.Pelvis'].append(angles_pelvis)
+        else:
+            angles_pelvis = data_points["L.Pelvis"][i]
+        if 'L.Hip' not in list_of_points:
+            angles_Hip_left = get_angles_euler(base_pelvis_left, base_thigh_left, sequence="yxz", polarity=(1, 1, 1))
+            nouv_points['L.Hip'].append(angles_Hip_left)
+        else:
+            angles_Hip_left = data_points["L.Hip"][i]
+        if 'L.Knee' not in list_of_points:
+            angles_Knee_left = get_angles_euler(base_thigh_left, base_leg_left, "yxz", polarity=(-1, 1, 1))
+            nouv_points['L.Knee'].append(angles_Knee_left)
+        else:
+            angles_Hip_left = data_points["L.Knee"][i]
+        if 'L.Ankle' not in list_of_points:
+            angles_Ankle_left = get_angles_euler(base_leg_left, base_foot_left, "xzy")
+            nouv_points['L.Ankle'].append(angles_Ankle_left)
+        else:
+            angles_Ankle_left = data_points["L.Ankle"][i]
+        if 'R.Hip' not in list_of_points:
+            angles_Hip_right = get_angles_euler(base_pelvis_right, base_thigh_right, sequence="yxz", polarity=(1, -1, -1))
+            nouv_points['R.Hip'].append(angles_Hip_right)
+        else:
+            angles_Hip_right = data_points["R.Hip"][i]
+        if 'R.Knee' not in list_of_points:
+            angles_Knee_right = get_angles_euler(base_thigh_right, base_leg_right, sequence="yxz", polarity=(-1, -1, -1))
+            nouv_points['R.Knee'].append(angles_Knee_right)
+        else:
+            angles_Knee_right = data_points["R.Knee"][i]
+        if 'R.Ankle' not in list_of_points:
+            angles_Ankle_right = get_angles_euler(base_leg_right, base_foot_right, "zxy", polarity=(-1, -1, 1))
+            nouv_points['R.Ankle'].append(angles_Ankle_right)
+        else:
+            angles_Ankle_right = data_points["R.Ankle"][i]
+    
+        
+        
+        
+        pelvis_str ="{} {} {} ".format(angles_pelvis[0], angles_pelvis[1], -angles_pelvis[2]) 
+        Lhip_str = "{} {} {} ".format(-angles_Hip_left[0], -angles_Hip_left[1], -angles_Hip_left[2]) 
+        Lknee_str = "{} {} {} ".format(-angles_Hip_left[0], angles_Hip_left[1], -angles_Hip_left[2])
+        Lankle_str = "{} {} {} ".format(-angles_Ankle_left[0], -angles_Ankle_left[1], -angles_Ankle_left[2])
+        Rhip_str = "{} {} {} ".format(angles_Hip_right[0], -angles_Hip_right[1], angles_Hip_right[2])
+        Rknee_str = "{} {} {} ".format(angles_Knee_right[0], angles_Knee_right[1], angles_Knee_right[2])
+        Rankle_str = "{} {} {} ".format(angles_Ankle_right[0], -angles_Ankle_right[1], angles_Ankle_right[2])
+        
+        
+        LowerBack = "0 -10 0 "
+        
+        if 'L.Spine' not in list_of_points: 
+            Spine = 0, 0, 0
+        else:
+            Spine = data_points["L.Spine"][i] 
+            
+        
+        Spine1 = "0 0 0 "
+        
+        if 'Neck' not in list_of_points:
+            Neck = 0, 0, 0
+        else:
+            Neck = data_points["Neck"][i]
+            
+        Neck1 = "0 0 0 "
+        Head = "0 0 0 "
+        
+        
+        LClavicle = "0 0 0 "
+        if 'L.Elbow' not in list_of_points:
+            LElbow = 0, 0, 0
+        else:
+            LElbow = data_points["L.Elbow"][i]
+            
+        if 'L.Wrist' not in list_of_points:
+            LWrist = 0, 0, 0
+        else:
+            LWrist = data_points["L.Wrist"][i] 
+        
+        if 'L.Shoulder' not in list_of_points:
+            LShoulder = 0, 0, 0
+        else:
+            LShoulder =  data_points["L.Shoulder"][i]
+        
+        
+        RClavicle ="0 0 0 "
+
+        if 'R.Wrist' not in list_of_points:
+            RWrist =0, 0, 0
+        else:
+            RWrist = data_points["R.Wrist"][i] 
+            
+        if 'R.Shoulder' not in list_of_points:
+            RShoulder = 0, 0, 0
+        else:
+            RShoulder =  data_points["R.Shoulder"][i]
+            
+        if 'R.Elbow' not in list_of_points:
+            RElbow = 0, 0, 0
+        else:
+            RElbow = data_points["R.Elbow"][i]
+        
+        
+        Spine_str = "{} {} {} ".format(-Spine[0], Spine[1], -Spine[2])
+        Neck_str = "{} {} {} ".format(Neck[0], -Neck[1], Neck[2])
+        LElbow_str = "{} {} {} ".format(LElbow[0], LElbow[2], -LElbow[1])
+        RElbow_str = "{} {} {} ".format(-RElbow[0], RElbow[2], RElbow[1])
+        LWrist_str = "{} {} {} ".format(-LWrist[1], LWrist[2], -LWrist[0])
+        RWrist_str = "{} {} {} ".format(RWrist[1], RWrist[2], RWrist[0])
+        RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
+        LShoulder_str = "{} {} {} ".format(LShoulder[0]-90, LShoulder[1], LShoulder[2])
+        
+        # positions_pelvis = "{} {} {} ".format(data_points["V.PelvisOriginBD"][i][1]/1000, data_points["V.PelvisOriginBD"][i][2]/1000, -data_points["V.PelvisOriginBD"][i][0]/600)
+        
+        positions_pelvis = "1000 1000 1000 "
+        Lpelvis = "0 0 0 "
+        Rplevis = "0 0 0 "
+        leftover = 14*"0 0 0 "
+        ecrire = positions_pelvis + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + LowerBack + Spine1 + Spine_str + Neck_str + Neck1 + Head + LClavicle + LShoulder_str + LElbow_str + LWrist_str + RClavicle + RShoulder_str + RElbow_str + RWrist_str + "\n"
+        f.write(ecrire.replace("nan","0"))
+        
+        k=number_of_points
+        for point in nouv_points.keys():
+            # if point != "Pelvis":
+            #     print(i , point, " : ", data_points[point][i], " ---> ", c["parameters"]["POINT"]["LABELS"]["value"][k], " : ", nouv_points[point][i-first_frame])
+            for j in range(4):
+                c["data"]["points"][j][k][i] = nouv_points[point][i-first_frame][j]
+            k+=1
+            
+    c.write("nouv_" + file)
 
 def as_euler_fait_maison(P):
     return
@@ -897,64 +1085,10 @@ class CustomFileDialog():
         )
         print(self.filepath)
         self.handle_selection()
-        self.master.destroy()
-    
+        
     def handle_selection(self):
         # Retourne le fichier sélectionné
-        def full_file_or_not_button():
-            dialog = tk.Toplevel()
-            dialog.title("Choix du mode")
-            
-            label = tk.Label(dialog, text="Choisissez le type de c3d :")
-            label.pack(pady=10)
-            
-            button1 = tk.Button(dialog, text="Complet", command=lambda: on_button_click1("Complet", dialog))
-            button1.pack(side=tk.LEFT, padx=10, pady=10)
-            
-            button2 = tk.Button(dialog, text="Bas du corps", command=lambda: on_button_click1("Bas", dialog))
-            button2.pack(side=tk.LEFT, padx=10, pady=10)
-            
-            cancel_button = tk.Button(dialog, text="Annuler", command=dialog.destroy)
-            cancel_button.pack(side=tk.LEFT, padx=10, pady=10)
-            
-        
-        def angles_file_or_not_button():
-            dialog = tk.Toplevel()
-            dialog.title("Choix du mode")
-            
-            label = tk.Label(dialog, text="Choisissez le type de c3d :")
-            label.pack(pady=10)
-            
-            button1 = tk.Button(dialog, text="le c3d contient les angles", command=lambda: on_button_click2(True, dialog))
-            button1.pack(side=tk.LEFT, padx=10, pady=10)
-            
-            button2 = tk.Button(dialog, text="le c3d NE contient PAS les angles", command=lambda: on_button_click2(False, dialog))
-            button2.pack(side=tk.LEFT, padx=10, pady=10)
-            
-            cancel_button = tk.Button(dialog, text="Annuler", command=dialog.destroy)
-            cancel_button.pack(side=tk.LEFT, padx=10, pady=10)
-            
-        def on_button_click1(option, dialog):
-            print(f"Vous avez choisi : {option}")
-            if(option == "Complet"):
-                c3d_avec_angles_complet(self.filepath)
-            else:
-                root.withdraw()
-                angles_file_or_not_button()
-            dialog.destroy()
-        
-        def on_button_click2(option, dialog):
-            print(f"Vous avez choisi : {option}")
-            if option:
-                c3d_avec_angles(self.filepath)
-            else:
-                print("C3d sans angles sur : ", self.filepath)
-                c3d_sans_angles(self.filepath)
-            dialog.destroy()
-            
-        root.withdraw()
-        full_file_or_not_button()
-        root.mainloop()
+        c3d_to_bvh_final(self.filepath)
 
 
 if __name__ == "__main__":

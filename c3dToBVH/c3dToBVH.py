@@ -875,7 +875,7 @@ def affichegroup(file):
     
 # c3d_avec_angles_complet("Corridor_050_avec_angles_v4.c3d")    
 
-# c3d_sans_angles("Corridor_050.c3d")
+c3d_sans_angles("Corridor_050.c3d")
 
 # comparaison_angles("Corridor_050_avec_angles.c3d")
 # affiche_c3d_bis_bis("Corridor_050_avec_angles.c3d", "nouv_Corridor_050.c3d")
