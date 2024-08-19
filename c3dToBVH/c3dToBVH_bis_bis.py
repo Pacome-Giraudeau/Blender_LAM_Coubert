@@ -822,6 +822,9 @@ def c3d_to_bvh_final(file):
             k+=1
             
     c.write("nouv_" + file)
+       
+
+
 
 def as_euler_fait_maison(P):
     return
