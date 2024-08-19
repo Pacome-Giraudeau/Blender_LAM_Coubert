@@ -14,7 +14,7 @@ def find_first_frame(data_points):
         obstruction = False
         for point in points:
             # si un des point est obstrué, on considère la frame obstruée 
-            if np.isnan(data_points[point][f][0]):
+            if np.isnan(#  (frame f)  de [point][f][0]):)
                 obstruction = True
                 break
         f+=1
@@ -33,7 +33,7 @@ def find_last_frame(data_points, frames):
         for point in points:
             # si un des point est obstrué, on considère la frame obstruée 
             
-            if np.isnan(data_points[point][f][0]):
+            if np.isnan(# angles (frame i)  de point][f][0]):
                 obstruction = True
                 break
     return f
@@ -50,20 +50,20 @@ def c3d_to_bvh_pour_coda(file):
     f.write("\n\n\nFrames: " + str(frames))
     f.write("\nFrame Time: " + str(frame_time) + "\n") 
     
-    list_of_points = c["parameters"]["POINT"]["LABELS"]["value"]
+    list_of_points = # liste des points captés
     
     for i in range(first_frame, last_frame):
             
             
-        angles_pelvis = data_points["L.Pelvis"][i]
+        angles_pelvis = # angles (frame i)  de "L.Pelvis"][i]
         
-        angles_Hip_left = data_points["L.Hip"][i]
-        angles_Hip_left = data_points["L.Knee"][i]
-        angles_Ankle_left = data_points["L.Ankle"][i]
+        angles_Hip_left = # angles (frame i)  de "L.Hip"][i]
+        angles_Hip_left = # angles (frame i)  de "L.Knee"][i]
+        angles_Ankle_left = # angles (frame i)  de "L.Ankle"][i]
         
-        angles_Hip_right = data_points["R.Hip"][i]
-        angles_Knee_right = data_points["R.Knee"][i]
-        angles_Ankle_right = data_points["R.Ankle"][i]
+        angles_Hip_right = # angles (frame i)  de "R.Hip"][i]
+        angles_Knee_right = # angles (frame i)  de "R.Knee"][i]
+        angles_Ankle_right = # angles (frame i)  de "R.Ankle"][i]
         
         
         LowerBack = "0 -10 0 "
@@ -71,7 +71,7 @@ def c3d_to_bvh_pour_coda(file):
         if 'L.Spine' not in list_of_points: 
             Spine = 0, 0, 0
         else:
-            Spine = data_points["L.Spine"][i] 
+            Spine = # angles (frame i)  de "L.Spine"][i] 
             
         
         Spine1 = "0 0 0 "
@@ -79,7 +79,7 @@ def c3d_to_bvh_pour_coda(file):
         if 'Neck' not in list_of_points:
             Neck = 0, 0, 0
         else:
-            Neck = data_points["Neck"][i]
+            Neck = # angles (frame i)  de "Neck"][i]
             
         Neck1 = "0 0 0 "
         Head = "0 0 0 "
@@ -90,17 +90,17 @@ def c3d_to_bvh_pour_coda(file):
         if 'L.Elbow' not in list_of_points:
             LElbow = 0, 0, 0
         else:
-            LElbow = data_points["L.Elbow"][i]
+            LElbow = # angles (frame i)  de "L.Elbow"][i]
             
         if 'L.Wrist' not in list_of_points:
             LWrist = 0, 0, 0
         else:
-            LWrist = data_points["L.Wrist"][i] 
+            LWrist = # angles (frame i)  de "L.Wrist"][i] 
         
         if 'L.Shoulder' not in list_of_points:
             LShoulder = 0, 0, 0
         else:
-            LShoulder =  data_points["L.Shoulder"][i]
+            LShoulder =  # angles (frame i)  de "L.Shoulder"][i]
         
         
         RClavicle ="0 0 0 "
@@ -108,22 +108,22 @@ def c3d_to_bvh_pour_coda(file):
         if 'R.Wrist' not in list_of_points:
             RWrist =0, 0, 0
         else:
-            RWrist = data_points["R.Wrist"][i] 
+            RWrist = # angles (frame i)  de "R.Wrist"][i] 
             
         if 'R.Shoulder' not in list_of_points:
             RShoulder = 0, 0, 0
         else:
-            RShoulder =  data_points["R.Shoulder"][i]
+            RShoulder =  # angles (frame i)  de "R.Shoulder"][i]
             
         if 'R.Elbow' not in list_of_points:
             RElbow = 0, 0, 0
         else:
-            RElbow = data_points["R.Elbow"][i]
+            RElbow = # angles (frame i)  de "R.Elbow"][i]
         
         
         pelvis_str ="{} {} {} ".format(angles_pelvis[0], angles_pelvis[1], -angles_pelvis[2]) 
         Lhip_str = "{} {} {} ".format(-angles_Hip_left[0], -angles_Hip_left[1], -angles_Hip_left[2]) 
-        Lknee_str = "{} {} {} ".format(-angles_Hip_left[0], angles_Hip_left[1], -angles_Hip_left[2])
+        Lknee_str = "{} {} {} ".format(-angles_Knee_left[0], angles_Knee_left[1], -angles_Knee_left[2])
         Lankle_str = "{} {} {} ".format(-angles_Ankle_left[0], -angles_Ankle_left[1], -angles_Ankle_left[2])
         Rhip_str = "{} {} {} ".format(angles_Hip_right[0], -angles_Hip_right[1], angles_Hip_right[2])
         Rknee_str = "{} {} {} ".format(angles_Knee_right[0], angles_Knee_right[1], angles_Knee_right[2])
@@ -141,7 +141,7 @@ def c3d_to_bvh_pour_coda(file):
         RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
         LShoulder_str = "{} {} {} ".format(LShoulder[0]-90, LShoulder[1], LShoulder[2])
         
-        # positions_pelvis = "{} {} {} ".format(data_points["V.PelvisOriginBD"][i][1]/1000, data_points["V.PelvisOriginBD"][i][2]/1000, -data_points["V.PelvisOriginBD"][i][0]/600)
+        # positions_pelvis = "{} {} {} ".format(# angles (frame i)  de "V.PelvisOriginBD"][i][1]/1000, # angles (frame i)  de "V.PelvisOriginBD"][i][2]/1000, -# angles (frame i)  de "V.PelvisOriginBD"][i][0]/600)
         
         positions_pelvis = "1000 1000 1000 "
         Lpelvis = "0 0 0 "
