@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from ezc3d import c3d as ezc3d
 
+import tkinter as tk
+from tkinter import filedialog
+
 
 
 def get_data(file):
@@ -587,13 +590,13 @@ def c3d_avec_angles_complet(file):
         Rankle_str = "{} {} {} ".format(angles_Ankle_right[0], -angles_Ankle_right[1], angles_Ankle_right[2])
         
         # LowerBack = data_points[""][i] -> 0
-        LowerBack = "0 0 0 "
+        LowerBack = "0 -10 0 "
         Spine = data_points["L.Spine"][i] 
-        Spine_str = "{} {} {} ".format(-Spine[0], -Spine[1], -Spine[2])
+        Spine_str = "{} {} {} ".format(-Spine[0], Spine[1], -Spine[2])
         # Spine1 = data_points[][i] -> 0
         Spine1 = "0 0 0 "
         Neck = data_points["Neck"][i]
-        Neck_str = "{} {} {} ".format(Neck[0],-Neck[1],-Neck[2])
+        Neck_str = "{} {} {} ".format(Neck[0], -Neck[1], Neck[2])
         # Neck1 = data_points[][i] -> 0
         Neck1 = "0 0 0 "
         # Head = data_points[][i]-> 0
@@ -605,7 +608,7 @@ def c3d_avec_angles_complet(file):
         LElbow_str = "{} {} {} ".format(LElbow[0], LElbow[2], -LElbow[1])
         
         RElbow = data_points["R.Elbow"][i]
-        RElbow_str = "{} {} {} ".format(RElbow[0], RElbow[2], RElbow[1])
+        RElbow_str = "{} {} {} ".format(-RElbow[0], RElbow[2], RElbow[1])
         
         LWrist = data_points["L.Wrist"][i] 
         LWrist_str = "{} {} {} ".format(-LWrist[1], LWrist[2], -LWrist[0])
@@ -617,7 +620,9 @@ def c3d_avec_angles_complet(file):
         RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
         LShoulder =  data_points["L.Shoulder"][i]
         LShoulder_str = "{} {} {} ".format(LShoulder[0]-90, LShoulder[1], LShoulder[2])
-        positions_pelvis = "0 0 0 "
+        positions_pelvis = "1000 1000 1000 "
+        # positions_pelvis = "{} {} {} ".format(data_points["V.PelvisOriginBD"][i][1]/1000, data_points["V.PelvisOriginBD"][i][2]/1000, -data_points["V.PelvisOriginBD"][i][0]/600)
+        
         Lpelvis = "0 0 0 "
         Rplevis = "0 0 0 "
         leftover = 14*"0 0 0 "
@@ -625,7 +630,7 @@ def c3d_avec_angles_complet(file):
                 Lpelvis + Lhip_str + Lknee_str + Lankle_str + 
                 Rplevis + Rhip_str + Rknee_str + Rankle_str + 
                 
-                LowerBack + Spine_str + Spine1 + Neck_str + Neck1 + Head + 
+                LowerBack + Spine1 + Spine_str + Neck_str + Neck1 + Head + 
                 LClavicle + LShoulder_str + LElbow_str + LWrist_str + RClavicle + 
                 RShoulder_str + RElbow_str + RWrist_str + "\n")
         
@@ -868,9 +873,10 @@ def affichegroup(file):
     # print(len(c['data']['points'][0])); 
     # print(c["data"]["points"])
     
-c3d_avec_angles_complet("Corridor_050_avec_angles_v4.c3d")    
+# c3d_avec_angles_complet("Corridor_050_avec_angles_v4.c3d")    
 
 # c3d_sans_angles("Corridor_050.c3d")
 
 # comparaison_angles("Corridor_050_avec_angles.c3d")
 # affiche_c3d_bis_bis("Corridor_050_avec_angles.c3d", "nouv_Corridor_050.c3d")
+

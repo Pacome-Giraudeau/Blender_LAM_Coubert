@@ -1,4 +1,5 @@
 
+
 import numpy as np
 import math
 from scipy.spatial.transform import Rotation as R
@@ -6,6 +7,9 @@ import shutil
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from ezc3d import c3d as ezc3d
+
+import tkinter as tk
+from tkinter import filedialog
 
 
 
@@ -317,6 +321,7 @@ def get_angles_euler(B1, B2, sequence='yxz', polarity=(1,1,1)):
     P = matrice_de_passage(B1, B2)
     angles = angles_euler_from_matrice_passage(P, sequence, polarity)
     angles_arrondis = np.array([round(angles[0], 4), round(angles[1], 4), round(angles[2], 4)])
+    #angles_arrondis[0], angles_arrondis[1] = angles_arrondis[1], angles_arrondis[0]
     return np.array([angles_arrondis[0], angles_arrondis[1], angles_arrondis[2],  0])
 
 
@@ -426,13 +431,13 @@ def c3d_sans_angles(file):
     c = ezc3d(file)
     del c['data']['meta_points']
     nouv_points = dict()
-    nouv_points['Pelvis_ang'] = []
-    nouv_points['L.Hip_ang'] = []
-    nouv_points['L.Knee_ang'] = []
-    nouv_points['L.Ankle_ang'] = []
-    nouv_points['R.Hip_ang'] = []
-    nouv_points['R.Knee_ang'] = []
-    nouv_points['R.Ankle_ang'] = []
+    nouv_points['Pelvis'] = []
+    nouv_points['L.Hip'] = []
+    nouv_points['L.Knee'] = []
+    nouv_points['L.Ankle'] = []
+    nouv_points['R.Hip'] = []
+    nouv_points['R.Knee'] = []
+    nouv_points['R.Ankle'] = []
     
     number_of_points = len(c["parameters"]["POINT"]["LABELS"]["value"])
     c["parameters"]["POINT"]["LABELS"]["value"] = c["parameters"]["POINT"]["LABELS"]["value"] + list(nouv_points.keys())
@@ -463,7 +468,7 @@ def c3d_sans_angles(file):
         angles_pelvis = get_angles_euler(base_global, base_pelvis_left, sequence="yxz", polarity=(-1, -1, 1))
         
         angles_Hip_left = get_angles_euler(base_pelvis_left, base_thigh_left, sequence="yxz", polarity=(1, 1, 1))
-        angles_Knee_left = get_angles_euler(base_thigh_left, base_leg_left, "yxz", polarity=(-1, 1, 1)) #######################
+        angles_Knee_left = get_angles_euler(base_thigh_left, base_leg_left, "yxz", polarity=(-1, 1, 1))
         angles_Ankle_left = get_angles_euler(base_leg_left, base_foot_left, "xzy")
         
         angles_Hip_right = get_angles_euler(base_pelvis_right, base_thigh_right, sequence="yxz", polarity=(1, -1, -1))
@@ -491,15 +496,15 @@ def c3d_sans_angles(file):
         f.write(ecrire.replace("nan","0"))
         
         # Mise dans le dico pour le nouveau c3d
-        nouv_points['Pelvis_ang'].append(angles_pelvis)
+        nouv_points['Pelvis'].append(angles_pelvis)
         
-        nouv_points['L.Hip_ang'].append(angles_Hip_left)
-        nouv_points['L.Knee_ang'].append(angles_Knee_left)
-        nouv_points['L.Ankle_ang'].append(angles_Ankle_left)
+        nouv_points['L.Hip'].append(angles_Hip_left)
+        nouv_points['L.Knee'].append(angles_Knee_left)
+        nouv_points['L.Ankle'].append(angles_Ankle_left)
         
-        nouv_points['R.Hip_ang'].append(angles_Hip_right)
-        nouv_points['R.Knee_ang'].append(angles_Knee_right)
-        nouv_points['R.Ankle_ang'].append(angles_Ankle_right)
+        nouv_points['R.Hip'].append(angles_Hip_right)
+        nouv_points['R.Knee'].append(angles_Knee_right)
+        nouv_points['R.Ankle'].append(angles_Ankle_right)
         
         k=number_of_points
         for point in nouv_points.keys():
@@ -586,13 +591,13 @@ def c3d_avec_angles_complet(file):
         Rankle_str = "{} {} {} ".format(angles_Ankle_right[0], -angles_Ankle_right[1], angles_Ankle_right[2])
         
         # LowerBack = data_points[""][i] -> 0
-        LowerBack = "0 0 0 "
+        LowerBack = "0 -10 0 "
         Spine = data_points["L.Spine"][i] 
-        Spine_str = "{} {} {} ".format(-Spine[0], -Spine[1], -Spine[2])
+        Spine_str = "{} {} {} ".format(-Spine[0], Spine[1], -Spine[2])
         # Spine1 = data_points[][i] -> 0
         Spine1 = "0 0 0 "
         Neck = data_points["Neck"][i]
-        Neck_str = "{} {} {} ".format(Neck[0],-Neck[1],-Neck[2])
+        Neck_str = "{} {} {} ".format(Neck[0], -Neck[1], Neck[2])
         # Neck1 = data_points[][i] -> 0
         Neck1 = "0 0 0 "
         # Head = data_points[][i]-> 0
@@ -604,7 +609,7 @@ def c3d_avec_angles_complet(file):
         LElbow_str = "{} {} {} ".format(LElbow[0], LElbow[2], -LElbow[1])
         
         RElbow = data_points["R.Elbow"][i]
-        RElbow_str = "{} {} {} ".format(RElbow[0], RElbow[2], RElbow[1])
+        RElbow_str = "{} {} {} ".format(-RElbow[0], RElbow[2], RElbow[1])
         
         LWrist = data_points["L.Wrist"][i] 
         LWrist_str = "{} {} {} ".format(-LWrist[1], LWrist[2], -LWrist[0])
@@ -613,10 +618,12 @@ def c3d_avec_angles_complet(file):
         RWrist = data_points["R.Wrist"][i] 
         RWrist_str = "{} {} {} ".format(RWrist[1], RWrist[2], RWrist[0])
         RShoulder =  data_points["R.Shoulder"][i]
-        RShoulder_str = "{} {} {} ".format(75, 0, 1.5*RShoulder[0]-30)
+        RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
         LShoulder =  data_points["L.Shoulder"][i]
-        LShoulder_str = "{} {} {} ".format(-75, 0, 1.5*LShoulder[0]+30)
-        positions_pelvis = "0 0 0 "
+        LShoulder_str = "{} {} {} ".format(LShoulder[0]-90, LShoulder[1], LShoulder[2])
+        positions_pelvis = "1000 1000 1000 "
+        # positions_pelvis = "{} {} {} ".format(data_points["V.PelvisOriginBD"][i][1]/1000, data_points["V.PelvisOriginBD"][i][2]/1000, -data_points["V.PelvisOriginBD"][i][0]/600)
+        
         Lpelvis = "0 0 0 "
         Rplevis = "0 0 0 "
         leftover = 14*"0 0 0 "
@@ -624,7 +631,7 @@ def c3d_avec_angles_complet(file):
                 Lpelvis + Lhip_str + Lknee_str + Lankle_str + 
                 Rplevis + Rhip_str + Rknee_str + Rankle_str + 
                 
-                LowerBack + Spine_str + Spine1 + Neck_str + Neck1 + Head + 
+                LowerBack + Spine1 + Spine_str + Neck_str + Neck1 + Head + 
                 LClavicle + LShoulder_str + LElbow_str + LWrist_str + RClavicle + 
                 RShoulder_str + RElbow_str + RWrist_str + "\n")
         
@@ -646,9 +653,6 @@ def angles_euler_from_matrice_passage_bis(P, sequence='yxz', polarity = (1,1,1))
     # Créer un objet Rotation à partir de la matrice de passage
     # Extraire les angles d'Euler selon la séquence spécifiée
     P = np.array(P)
-    print(P)
-    P[:, [0, 1]] = P[:, [1, 0]]
-    print(P)
     
     beta = np.arcsin(P[2][0])
     alpha = np.arcsin(-P[2][1]/np.cos(beta))
@@ -695,43 +699,13 @@ def comparaison_angles(file):
         base_foot_left = calculate_base_foot_left(i, data_points)
         base_foot_right = calculate_base_foot_right(i, data_points)
         
-        angles_bis = get_angles_euler_bis(base_thigh_left, base_leg_left)
-        angles = get_angles_euler(base_thigh_left, base_leg_left, "zxy")
+        angles_bis = get_angles_euler_bis(base_thigh_left, base_leg_left, "xyz")
+        angles = get_angles_euler(base_thigh_left, base_leg_left, "xyz")
         Lknee_str = "{} {} {} ".format(angles[0], angles[1], angles[2]) 
         print(i, "  > calculated : ", angles_bis, "  ---  library : ", angles,"  ---  truth : ", data_points["L.Knee"][i])
 
 
 
-def test(f, file):
-    data_points, frames, frame_time, first_frame, last_frame, base_global = init(file)
-    print(" POINTS : \n", data_points['V.L.Knee'][f])
-    print(data_points['V.L.Hip'][f])
-    print(data_points['V.L.MedialFemoralEpicondyle'][f])
-    print(data_points['V.L.LateralFemoralEpicondyle'][f], "\n")
-    print("vecteurs normalisés : \n", 
-          normalized_vector(data_points['V.L.Knee'][f], data_points['V.L.Hip'][f]))
-    print(normalized_vector(data_points['V.L.MedialFemoralEpicondyle'][f],data_points['V.L.LateralFemoralEpicondyle'][f]), "\n")
-    print(normalized_vector(data_points['V.L.Ankle'][f], data_points['V.L.Knee'][f]))
-    print(normalized_vector(data_points['V.L.MedialMalleolus'][f],data_points['V.L.LateralMalleolus'][f]), "\n")
-    
-    B1 = calculate_base_leg_left(f, data_points)
-    B2 = calculate_base_thigh_left(f, data_points)
-    print("B1 : \n", B1, "\n", np.array(B1), "\n", np.column_stack(B1))
-    print("\n\nB2 : \n", B2, "\n", np.array(B2), "\n", np.column_stack(B2))
-    print("\n\n")
-    M = matrice_de_passage(B1, B2)
-    print(M)
-    print(np.dot(M, B1))
-    print(B2, "\n\n")
-    print("\n M*B1 : \n", np.dot(M, calculate_base_leg_left(f, data_points)))
-    print("\n B2  : \n", calculate_base_thigh_left(f, data_points), "\n\n")
-    rot = R.from_matrix(M)
-    print("\n from matrix : ", rot.as_euler("yxz", degrees=True))
-    print("\n from get_euler_angles: ", get_angles_euler(calculate_base_leg_left(f, data_points), calculate_base_thigh_left(f, data_points), sequence="xyz"))
-    print("\n True angles: ", data_points['L.Knee'][f])
-    print("\n", np.dot(B1, np.array(B1).transpose()))
-    print("\n", np.dot(B2, np.array(B2).transpose()))
-    
 def comparaison_repères():
     data_points, frames, frame_time, first_frame, last_frame, base_global = init(file)
     for i in range(first_frame, first_frame+3):
@@ -769,7 +743,21 @@ def comparaison_repères():
         print(base_foot_right[2])
         print("\n")
     
-      
+        
+
+def affiche_c3d(file):       
+    """
+    """
+    reader = ezc3d(file)
+
+    for i in range(len(reader["data"]["points"][0][b])):
+        a = 106
+        b = 105
+        print(i,  " : ", reader["parameters"]["POINT"]["LABELS"]["value"][b], " : ", [reader["data"]["points"][j][b][i] for j in range(4)])
+    for i in range(len(reader.point_labels)):
+        print(i, reader.point_labels[i], " --- ", reader["parameters"]["POINT"]["LABELS"]["value"][i])
+        
+
 
 def affiche(file, label, label2):
     data_points, frames, frame_time, ff, lf, base_global = init(file)
@@ -845,7 +833,7 @@ def init(file):
     else:
         base_global = np.array([-1, 0, 0]), np.array([0, -1, 0]), np.array([0, 0, 1])    
 
-    data_points = interpolation(data_points, 0, frames)
+    data_points = interpolation(data_points, first_frame, last_frame)
     return data_points, frames, frame_time, first_frame, last_frame, base_global
 
 ############  INTERPOLATION
@@ -857,27 +845,12 @@ def interpolation(data_points, first_frame, last_frame):
         missing_indices, existing_indices, existing_points = existing_or_not__indices(point, first_frame, last_frame, data_points)
         # Interpoler séparément pour x, y et z
         interp_func = interp1d(existing_indices, existing_points, axis=0, kind='linear', fill_value="extrapolate")
-        
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        x= [p[0] for p in existing_points]
-        y= [p[1] for p in existing_points]
-        z= [p[2] for p in existing_points]
-        ax.scatter(x, y, z, c="red")
-        ax.plot(x,y,z)
         for f in range(len(missing_indices)):
-            print(missing_indices[f])
-            p_interp = interp_func(missing_indices)
-            data_points[point][missing_indices[f]][0] = p_interp[f][0]
-            data_points[point][missing_indices[f]][1] = p_interp[f][1]
-            data_points[point][missing_indices[f]][2] = p_interp[f][2]
-        
-        x= [p[0] for p in data_points[point]]
-        y= [p[1] for p in data_points[point]]
-        z= [p[2] for p in data_points[point]]
-        ax.plot(x,y,z)
-        plt.show()
             
+            p = interp_func(missing_indices)
+            data_points[point][missing_indices[f]][0] = p[f][0]
+            data_points[point][missing_indices[f]][1] = p[f][1]
+            data_points[point][missing_indices[f]][3] = p[f][2]
         return data_points
         
 
@@ -901,11 +874,43 @@ def affichegroup(file):
     # print(len(c['data']['points'][0])); 
     # print(c["data"]["points"])
     
-  
+# c3d_avec_angles_complet("Corridor_050_avec_angles_v4.c3d")    
 
+# c3d_sans_angles("Corridor_050.c3d")
 
 # comparaison_angles("Corridor_050_avec_angles.c3d")
 # affiche_c3d_bis_bis("Corridor_050_avec_angles.c3d", "nouv_Corridor_050.c3d")
 
-c3d_sans_angles("Corridor_050_avec_angles_v4.c3d")
-affiche( "nouv_Corridor_050_avec_angles_v4.c3d", "R.Knee", "R.Knee_ang")
+
+class CustomFileDialog(filedialog.FileDialog):
+    def __init__(self, master, title=None):
+        super().__init__(master, title)
+        
+    def ok(self, event=None):
+        # Personnalisation de l'action lorsqu'on clique sur "OK"
+        print("Fichier sélectionné :", self.get_selection())
+        super().ok(event)
+    
+    def get_selection(self):
+        # Retourne le fichier sélectionné
+        return self.selection
+
+    def apply(self):
+        # Logique supplémentaire après la sélection
+        print("Appel à la méthode apply() pour gérer le fichier sélectionné.")
+        super().apply()
+        
+    def show(self):
+        # Vous pouvez personnaliser la boîte de dialogue ici
+        self.filepath = filedialog.askopenfilename(
+            title="Sélectionnez un fichier",
+            filetypes=(("Fichiers texte", "*.txt"), ("Tous les fichiers", "*.*"))
+        )
+        self.handle_selection()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.withdraw()  # On masque la fenêtre principale
+    
+    dialog = CustomFileDialog(root, title="Sélectionnez un fichier")
+    dialog.show()  # Affiche la boîte de dialogue personnalisée
