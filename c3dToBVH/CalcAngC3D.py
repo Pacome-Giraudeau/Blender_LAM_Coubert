@@ -42,53 +42,6 @@ def get_data(file):
     return data_points
  
  
- 
-# def get_data_bis(file):
-#     """
-#     entré : file
-#         file
-#         - lien d'un fichier c3d
-    
-#     sortie : 
-#         data_point
-#         - dictionnaire où les clés sont les labels des différents points
-#         - aux labels des points sont associés les listes de leurs points dans le temps 
-#         - data_points['label'] -> liste de points
-#         - data_points['label'][f] -> liste de 5 valeurs correspondant au point 'label' à la frame f
-#             - data_points['label'][f][0] : coordonée x
-#             - data_points['label'][f][1] : coordonée y
-#             - data_points['label'][f][2] : coordonée z
-#             - data_points['label'][f][3] : occlusion (-1 si occulté, 0 sinon)
-#             - data_points['label'][f][4] : marge d'erreur
-#     """
-#     data_points = dict()
-#     with open(file, 'rb') as handle:
-#         reader = c3d.Reader(handle)
-        
-#         for i, label in enumerate(reader.point_labels):
-#             data_points[label.replace(" ","")] = []
-                
-#         for n, points, analog in reader.read_frames():
-#             for j, label in enumerate(reader.point_labels):
-#                 data_points[label.replace(" ","")].append(points[j])
-            
-#         for i, label in enumerate(reader.point_labels):
-#             data_points[label.replace(" ","")] = np.array(data_points[label.replace(" ","")])
-            
-#     return data_points
-    
- 
-    
-    
-    
-# def init_joint_angles():      
-#     joints = ["LPelvis", "LHip", "LKnee", "LAnkle", "RPelvis", "RHip", "RKnee", "RAnkle"]
-#     #, "LowerBack", "Spine", "Spine1", "Neck", "Neck1", "Head", "LClavicle", "LShoulder", "LElbow", "LWrist"
-#     joints_angles = dict()
-#     for j in joints:
-#         joints_angles[joints[j]] = []
-#         return joints_angles
-    
 def norme(u):
     """
     Entrée : vecteur u de dimension 3
@@ -321,46 +274,7 @@ def get_angles_euler(B1, B2, sequence='yxz', polarity=(1,1,1)):
     angles_arrondis = np.array([round(angles[0], 4), round(angles[1], 4), round(angles[2], 4)])
     #angles_arrondis[0], angles_arrondis[1] = angles_arrondis[1], angles_arrondis[0]
     return np.array([angles_arrondis[0], angles_arrondis[1], angles_arrondis[2],  0])
-
-
-
-def find_first_frame(data_points):
-    """
-    Retourne la première frame non obstruée (i.e. aucun des points de la frame n'est obstrué )
-    """
-    points = data_points.keys()
-    f = 0
-    obstruction = True
-    while obstruction: 
-        obstruction = False
-        for point in points:
-            # si un des point est obstrué, on considère la frame obstruée 
-            if np.isnan(data_points[point][f][0]):
-                obstruction = True
-                break
-        f+=1
-    return f
-
-def find_last_frame(data_points, frames):
-    """
-    Retourne la première frame non obstruée (i.e. aucun des points de la frame n'est obstrué) en aprtant de la fin
-    """
-    points = data_points.keys()
-    f = frames
-    obstruction = True
-    while obstruction: 
-        f-=1
-        obstruction = False
-        for point in points:
-            # si un des point est obstrué, on considère la frame obstruée 
-            
-            if np.isnan(data_points[point][f][0]):
-                obstruction = True
-                break
-    return f
-    
-
-    
+   
     
 def existing_or_not__indices(point, first_frame, last_frame, data_points):
     """
@@ -400,199 +314,93 @@ def existing_or_not__indices(point, first_frame, last_frame, data_points):
 def c3d_to_bvh(file):
     data_points, frames, frame_time, first_frame, last_frame, base_global = init(file)
     
-    file_bvh = file[:-4] + ".bvh"
+    file_new = file[:-4] + "_new.c3d"
 
-    shutil.copyfile("bvh_base5.bvh", file_bvh)
-    with open(file_bvh, 'a') as f:
+    c = ezc3d(file)
+    del c['data']['meta_points']
+    
+    number_of_points = len(c["parameters"]["POINT"]["LABELS"]["value"])
+    list_of_points = c["parameters"]["POINT"]["LABELS"]["value"]
+    
+    nouv_points = dict()
+    if 'L.Pelvis' not in list_of_points:
+        nouv_points['L.Pelvis'] = []
+    if 'L.Hip' not in list_of_points:
+        nouv_points['L.Hip'] = []
+    if 'L.Knee' not in list_of_points:
+        nouv_points['L.Knee'] = []
+    if 'L.Ankle' not in list_of_points:
+        nouv_points['L.Ankle'] = []
+    if 'R.Hip' not in list_of_points:
+        nouv_points['R.Hip'] = []
+    if 'R.Knee' not in list_of_points:
+        nouv_points['R.Knee'] = []
+    if 'R.Ankle' not in list_of_points:
+        nouv_points['R.Ankle'] = []
+    
+    
+    c["parameters"]["POINT"]["LABELS"]["value"] = list_of_points + list(nouv_points.keys())
+    l = [[], [], [], []]
+    for j in range(4):
+        for k in range(number_of_points):
+            l[j].append(c["data"]["points"][j][k])
+        for k in range(len(nouv_points.keys())):
+            l[j].append(np.zeros(frames))
+            
+    c["data"]["points"] = np.array(l)
+    
 
-        f.write("\n\n\nFrames: " + str(frames))
-        f.write("\nFrame Time: " + str(frame_time) + "\n") 
-
-        c = ezc3d(file)
-        del c['data']['meta_points']
+    for i in range(0, frames):
+        # calcul des bases des différents solides de la frame
+        base_pelvis_left = calculate_base_pelvis_left(i, data_points)
+        base_pelvis_right = calculate_base_pelvis_right(i, data_points)
+        base_thigh_left = calculate_base_thigh_left(i, data_points)
+        base_thigh_right = calculate_base_thigh_right(i, data_points)
+        base_leg_left = calculate_base_leg_left(i, data_points)
+        base_leg_right = calculate_base_leg_right(i, data_points)
+        base_foot_left = calculate_base_foot_left(i, data_points)
+        base_foot_right = calculate_base_foot_right(i, data_points)
         
-        number_of_points = len(c["parameters"]["POINT"]["LABELS"]["value"])
-        list_of_points = c["parameters"]["POINT"]["LABELS"]["value"]
+        # Calcul des angles
         
-        nouv_points = dict()
-        if 'L.Pelvis' not in list_of_points:
-            nouv_points['L.Pelvis'] = []
+        
+        if 'L.Pelvis' not in list_of_points: 
+            angles_pelvis = get_angles_euler(base_global, base_pelvis_left, sequence="yxz", polarity=(-1, -1, 1))
+            nouv_points['L.Pelvis'].append(angles_pelvis)
+            
         if 'L.Hip' not in list_of_points:
-            nouv_points['L.Hip'] = []
+            angles_Hip_left = get_angles_euler(base_pelvis_left, base_thigh_left, sequence="yxz", polarity=(1, 1, 1))
+            nouv_points['L.Hip'].append(angles_Hip_left)
+            
         if 'L.Knee' not in list_of_points:
-            nouv_points['L.Knee'] = []
+            angles_Knee_left = get_angles_euler(base_thigh_left, base_leg_left, "yxz", polarity=(-1, 1, 1))
+            nouv_points['L.Knee'].append(angles_Knee_left)
+            
         if 'L.Ankle' not in list_of_points:
-            nouv_points['L.Ankle'] = []
+            angles_Ankle_left = get_angles_euler(base_leg_left, base_foot_left, "xzy")
+            nouv_points['L.Ankle'].append(angles_Ankle_left)
+            
         if 'R.Hip' not in list_of_points:
-            nouv_points['R.Hip'] = []
+            angles_Hip_right = get_angles_euler(base_pelvis_right, base_thigh_right, sequence="yxz", polarity=(1, -1, -1))
+            nouv_points['R.Hip'].append(angles_Hip_right)
+            
         if 'R.Knee' not in list_of_points:
-            nouv_points['R.Knee'] = []
+            angles_Knee_right = get_angles_euler(base_thigh_right, base_leg_right, sequence="yxz", polarity=(-1, -1, -1))
+            nouv_points['R.Knee'].append(angles_Knee_right)
+            
         if 'R.Ankle' not in list_of_points:
-            nouv_points['R.Ankle'] = []
+            angles_Ankle_right = get_angles_euler(base_leg_right, base_foot_right, "zxy", polarity=(-1, -1, 1))
+            nouv_points['R.Ankle'].append(angles_Ankle_right)
         
-        
-        c["parameters"]["POINT"]["LABELS"]["value"] = list_of_points + list(nouv_points.keys())
-        l = [[], [], [], []]
-        for j in range(4):
-            for k in range(number_of_points):
-                l[j].append(c["data"]["points"][j][k])
-            for k in range(len(nouv_points.keys())):
-                l[j].append(np.zeros(frames))
-                
-        c["data"]["points"] = np.array(l)
-        
+        k=number_of_points
+        for point in nouv_points.keys():
+            for j in range(4):
+                c["data"]["points"][j][k][i] = nouv_points[point][i][j]
+            k+=1
+            
+    print("j'écris sur les murs")
+    c.write(file_new)
     
-        for i in range(first_frame, last_frame):
-            # calcul des bases des différents solides de la frame
-            base_pelvis_left = calculate_base_pelvis_left(i, data_points)
-            base_pelvis_right = calculate_base_pelvis_right(i, data_points)
-            base_thigh_left = calculate_base_thigh_left(i, data_points)
-            base_thigh_right = calculate_base_thigh_right(i, data_points)
-            base_leg_left = calculate_base_leg_left(i, data_points)
-            base_leg_right = calculate_base_leg_right(i, data_points)
-            base_foot_left = calculate_base_foot_left(i, data_points)
-            base_foot_right = calculate_base_foot_right(i, data_points)
-            
-            # Calcul des angles
-            
-            
-                
-                
-            
-            if 'L.Pelvis' not in list_of_points: 
-                angles_pelvis = get_angles_euler(base_global, base_pelvis_left, sequence="yxz", polarity=(-1, -1, 1))
-                nouv_points['L.Pelvis'].append(angles_pelvis)
-            else:
-                angles_pelvis = data_points["L.Pelvis"][i]
-                
-            if 'L.Hip' not in list_of_points:
-                angles_Hip_left = get_angles_euler(base_pelvis_left, base_thigh_left, sequence="yxz", polarity=(1, 1, 1))
-                nouv_points['L.Hip'].append(angles_Hip_left)
-            else:
-                angles_Hip_left = data_points["L.Hip"][i]
-                
-            if 'L.Knee' not in list_of_points:
-                angles_Knee_left = get_angles_euler(base_thigh_left, base_leg_left, "yxz", polarity=(-1, 1, 1))
-                nouv_points['L.Knee'].append(angles_Knee_left)
-            else:
-                angles_Knee_left = data_points["L.Knee"][i]
-                
-            if 'L.Ankle' not in list_of_points:
-                angles_Ankle_left = get_angles_euler(base_leg_left, base_foot_left, "xzy")
-                nouv_points['L.Ankle'].append(angles_Ankle_left)
-            else:
-                angles_Ankle_left = data_points["L.Ankle"][i]
-                
-            if 'R.Hip' not in list_of_points:
-                angles_Hip_right = get_angles_euler(base_pelvis_right, base_thigh_right, sequence="yxz", polarity=(1, -1, -1))
-                nouv_points['R.Hip'].append(angles_Hip_right)
-            else:
-                angles_Hip_right = data_points["R.Hip"][i]
-                
-            if 'R.Knee' not in list_of_points:
-                angles_Knee_right = get_angles_euler(base_thigh_right, base_leg_right, sequence="yxz", polarity=(-1, -1, -1))
-                nouv_points['R.Knee'].append(angles_Knee_right)
-            else:
-                angles_Knee_right = data_points["R.Knee"][i]
-                
-            if 'R.Ankle' not in list_of_points:
-                angles_Ankle_right = get_angles_euler(base_leg_right, base_foot_right, "zxy", polarity=(-1, -1, 1))
-                nouv_points['R.Ankle'].append(angles_Ankle_right)
-            else:
-                angles_Ankle_right = data_points["R.Ankle"][i]
-        
-            
-            
-            
-            pelvis_str ="{} {} {} ".format(angles_pelvis[0], angles_pelvis[1], -angles_pelvis[2]) 
-            Lhip_str = "{} {} {} ".format(-angles_Hip_left[0], -angles_Hip_left[1], -angles_Hip_left[2]) 
-            Lknee_str = "{} {} {} ".format(-angles_Knee_left[0], angles_Knee_left[1], -angles_Knee_left[2])
-            Lankle_str = "{} {} {} ".format(-angles_Ankle_left[0], -angles_Ankle_left[1], -angles_Ankle_left[2])
-            Rhip_str = "{} {} {} ".format(angles_Hip_right[0], -angles_Hip_right[1], angles_Hip_right[2])
-            Rknee_str = "{} {} {} ".format(angles_Knee_right[0], angles_Knee_right[1], angles_Knee_right[2])
-            Rankle_str = "{} {} {} ".format(angles_Ankle_right[0], -angles_Ankle_right[1], angles_Ankle_right[2])
-            
-            
-            LowerBack = "0 -10 0 "
-            
-            if 'L.Spine' not in list_of_points: 
-                Spine = 0, 0, 0
-            else:
-                Spine = data_points["L.Spine"][i] 
-                
-            
-            Spine1 = "0 0 0 "
-            
-            if 'Neck' not in list_of_points:
-                Neck = 0, 0, 0
-            else:
-                Neck = data_points["Neck"][i]
-                
-            Neck1 = "0 0 0 "
-            Head = "0 0 0 "
-            
-            
-            LClavicle = "0 0 0 "
-            if 'L.Elbow' not in list_of_points:
-                LElbow = 0, 0, 0
-            else:
-                LElbow = data_points["L.Elbow"][i]
-                
-            if 'L.Wrist' not in list_of_points:
-                LWrist = 0, 0, 0
-            else:
-                LWrist = data_points["L.Wrist"][i] 
-            
-            if 'L.Shoulder' not in list_of_points:
-                LShoulder = 0, 0, 0
-            else:
-                LShoulder =  data_points["L.Shoulder"][i]
-            
-            
-            RClavicle ="0 0 0 "
-
-            if 'R.Wrist' not in list_of_points:
-                RWrist =0, 0, 0
-            else:
-                RWrist = data_points["R.Wrist"][i] 
-                
-            if 'R.Shoulder' not in list_of_points:
-                RShoulder = 0, 0, 0
-            else:
-                RShoulder =  data_points["R.Shoulder"][i]
-                
-            if 'R.Elbow' not in list_of_points:
-                RElbow = 0, 0, 0
-            else:
-                RElbow = data_points["R.Elbow"][i]
-            
-            
-            Spine_str = "{} {} {} ".format(-Spine[0], Spine[1], -Spine[2])
-            Neck_str = "{} {} {} ".format(Neck[0], -Neck[1], Neck[2])
-            LElbow_str = "{} {} {} ".format(LElbow[0], LElbow[2], -LElbow[1])
-            RElbow_str = "{} {} {} ".format(-RElbow[0], RElbow[2], RElbow[1])
-            LWrist_str = "{} {} {} ".format(-LWrist[1], LWrist[2], -LWrist[0])
-            RWrist_str = "{} {} {} ".format(RWrist[1], RWrist[2], RWrist[0])
-            RShoulder_str = "{} {} {} ".format(RShoulder[0]+90, RShoulder[1], RShoulder[2])
-            LShoulder_str = "{} {} {} ".format(LShoulder[0]-90, LShoulder[1], LShoulder[2])
-            
-            # positions_pelvis = "{} {} {} ".format(data_points["V.PelvisOriginBD"][i][1]/1000, data_points["V.PelvisOriginBD"][i][2]/1000, -data_points["V.PelvisOriginBD"][i][0]/600)
-            
-            positions_pelvis = "1000 1000 1000 "
-            Lpelvis = "0 0 0 "
-            Rplevis = "0 0 0 "
-            leftover = 14*"0 0 0 "
-            ecrire = positions_pelvis + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + LowerBack + Spine1 + Spine_str + Neck_str + Neck1 + Head + LClavicle + LShoulder_str + LElbow_str + LWrist_str + RClavicle + RShoulder_str + RElbow_str + RWrist_str + "\n"
-            f.write(ecrire.replace("nan","0"))
-            
-            k=number_of_points
-            for point in nouv_points.keys():
-                for j in range(4):
-                    c["data"]["points"][j][k][i] = nouv_points[point][i-first_frame][j]
-                k+=1
-                
-        c.write("nouv_" + file)
-       
 
 
 
@@ -611,18 +419,42 @@ def c3d_to_bvh(file):
         
 
 
-        
+def find_first_frame(data_points):
+    """
+    Retourne la première frame non obstruée (i.e. aucun des points de la frame n'est obstrué )
+    """
+    points = data_points.keys()
+    f = 0
+    obstruction = True
+    while obstruction: 
+        obstruction = False
+        for point in points:
+            # si un des point est obstrué, on considère la frame obstruée 
+            if np.isnan(data_points[point][f][0]):
+                obstruction = True
+                break
+        f+=1
+    return f
 
-
-
+def find_last_frame(data_points, frames):
+    """
+    Retourne la première frame non obstruée (i.e. aucun des points de la frame n'est obstrué) en aprtant de la fin
+    """
+    points = data_points.keys()
+    f = frames
+    obstruction = True
+    while obstruction: 
+        f-=1
+        obstruction = False
+        for point in points:
+            # si un des point est obstrué, on considère la frame obstruée 
+            
+            if np.isnan(data_points[point][f][0]):
+                obstruction = True
+                break
+    return f
     
-# affiche("L.Knee")
-
-
-# with open('Corridor_050_avec_angles.c3d', 'rb') as handle:
-#         reader = c3d.Reader(handle)
         
-#         reader.read_frames
 
 
 def init(file):
@@ -657,35 +489,9 @@ def interpolation(data_points, first_frame, last_frame):
             p = interp_func(missing_indices)
             data_points[point][missing_indices[f]][0] = p[f][0]
             data_points[point][missing_indices[f]][1] = p[f][1]
-            data_points[point][missing_indices[f]][2] = p[f][2]
+            data_points[point][missing_indices[f]][3] = p[f][2]
         return data_points
         
-
-# file="Corridor_050.c3d"
-# c3d_sans_angles(file)
-# file="Corridor_050_avec_angles.c3d"
-# c3d_avec_angles_complet(file)
-
-
-    
-# c3d_avec_angles_complet("Corridor_050_avec_angles_v4.c3d")    
-
-# c3d_sans_angles("Corridor_050.c3d")
-
-# comparaison_angles("Corridor_050_avec_angles.c3d")
-# affiche_c3d_bis_bis("Corridor_050_avec_angles.c3d", "nouv_Corridor_050.c3d")
-
-
-from pathlib import Path
-
-def find_c3d_files(directory):
-    # Récupère tous les fichiers .c3d récursivement dans le répertoire donné
-    c3d_files = list(Path(directory).rglob("*.c3d"))
-    return c3d_files
-
-
-
-
 
 
 class CustomFileDialog():
@@ -696,20 +502,16 @@ class CustomFileDialog():
         
     def show(self):
         # Vous pouvez personnaliser la boîte de dialogue ici
-        self.filepath = filedialog.askdirectory(
-            title="Sélectionnez un dossier"
+        self.filepath = filedialog.askopenfilename(
+            title="Sélectionnez un fichier",
+            filetypes=(("Fichiers c3d", "*.c3d"), ("Tous les fichiers", "*.*"))
         )
+        print(self.filepath)
         self.handle_selection()
         
     def handle_selection(self):
         # Retourne le fichier sélectionné
-        
-        c3d_files = find_c3d_files(self.filepath)
-        i = 1
-        for file in c3d_files:
-            print("\n", i, "/", len(c3d_files), "  -> ", str(file))
-            c3d_to_bvh(str(file))
-            i+=1
+        c3d_to_bvh(self.filepath)
 
 
 if __name__ == "__main__":
@@ -718,5 +520,3 @@ if __name__ == "__main__":
     
     dialog = CustomFileDialog()
     dialog.show()  # Affiche la boîte de dialogue personnalisée
-    
-    
