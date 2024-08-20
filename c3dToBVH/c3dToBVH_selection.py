@@ -493,9 +493,9 @@ def c3d_to_bvh(file):
         
             Lpelvis = "0 0 0 "
             Rplevis = "0 0 0 "
-            leftover = 14*"0 0 0 "
             ecrire = positions_pelvis + pelvis_str + Lpelvis + Lhip_str + Lknee_str + Lankle_str + Rplevis + Rhip_str + Rknee_str + Rankle_str + LowerBack + Spine1 + Spine_str + Neck_str + Neck1 + Head + LClavicle + LShoulder_str + LElbow_str + LWrist_str + RClavicle + RShoulder_str + RElbow_str + RWrist_str + "\n"
             f.write(ecrire.replace("nan","0"))
+        print(len(data_points["V.PelvisOriginBD"]), frames)
             
             
         
